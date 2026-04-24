@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import os
-import pickle
+import sqlite3
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from threading import Lock
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -17,40 +18,90 @@ class RecognitionResult:
 
 
 class EmbeddingStore:
-    """Local embedding storage using a dictionary persisted as a .pkl file."""
+    """SQLite-backed embedding storage with in-memory cache for fast reads."""
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
         self.embeddings: Dict[str, List[np.ndarray]] = {}
+        self._lock = Lock()
+        self._init_db()
+
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path, timeout=30, check_same_thread=False)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+        return conn
+
+    def _init_db(self) -> None:
+        parent = Path(self.db_path).parent
+        if str(parent) not in {"", "."}:
+            parent.mkdir(parents=True, exist_ok=True)
+
+        with self._connect() as conn:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS embeddings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    identity TEXT NOT NULL,
+                    vector BLOB NOT NULL,
+                    dim INTEGER NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_embeddings_identity ON embeddings(identity)"
+            )
 
     def load(self) -> None:
-        if not os.path.exists(self.db_path):
-            self.embeddings = {}
-            return
+        with self._lock:
+            loaded: Dict[str, List[np.ndarray]] = {}
+            with self._connect() as conn:
+                rows = conn.execute(
+                    "SELECT identity, vector, dim FROM embeddings ORDER BY id"
+                ).fetchall()
 
-        with open(self.db_path, "rb") as file:
-            raw_data = pickle.load(file)
+            for identity, vector_blob, dim in rows:
+                vector = np.frombuffer(vector_blob, dtype=np.float32, count=dim).copy()
+                loaded.setdefault(identity, []).append(vector)
 
-        self.embeddings = {
-            name: [np.asarray(vec, dtype=np.float32) for vec in vectors]
-            for name, vectors in raw_data.items()
-        }
+            self.embeddings = loaded
 
     def save(self) -> None:
-        serializable = {
-            name: [vec.astype(np.float32) for vec in vectors]
-            for name, vectors in self.embeddings.items()
-        }
-        with open(self.db_path, "wb") as file:
-            pickle.dump(serializable, file)
+        with self._lock:
+            with self._connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                conn.execute("DELETE FROM embeddings")
+                for name, vectors in self.embeddings.items():
+                    for vec in vectors:
+                        vec32 = np.asarray(vec, dtype=np.float32)
+                        conn.execute(
+                            "INSERT INTO embeddings(identity, vector, dim) VALUES (?, ?, ?)",
+                            (name, vec32.tobytes(), int(vec32.size)),
+                        )
+                conn.commit()
 
     def add_identity(self, name: str, vectors: List[np.ndarray]) -> None:
-        if name not in self.embeddings:
-            self.embeddings[name] = []
-        self.embeddings[name].extend([np.asarray(v, dtype=np.float32) for v in vectors])
+        normalized_vectors = [np.asarray(v, dtype=np.float32) for v in vectors]
+        if not normalized_vectors:
+            return
+
+        with self._lock:
+            with self._connect() as conn:
+                conn.execute("BEGIN IMMEDIATE")
+                for vec in normalized_vectors:
+                    conn.execute(
+                        "INSERT INTO embeddings(identity, vector, dim) VALUES (?, ?, ?)",
+                        (name, vec.tobytes(), int(vec.size)),
+                    )
+                conn.commit()
+
+            if name not in self.embeddings:
+                self.embeddings[name] = []
+            self.embeddings[name].extend(normalized_vectors)
 
     def identities(self) -> List[str]:
-        return list(self.embeddings.keys())
+        with self._lock:
+            return list(self.embeddings.keys())
 
 
 class FaceRecognizer:

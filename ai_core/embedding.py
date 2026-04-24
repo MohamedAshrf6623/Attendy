@@ -23,7 +23,8 @@ class FaceEmbedder:
             raise ValueError("preprocessed_face must have shape (160, 160, 3).")
 
         batch = np.expand_dims(preprocessed_face, axis=0)
-        embedding = self.model.predict(batch, verbose=0)[0]
+        # Direct model call is faster than model.predict for single-item real-time inference.
+        embedding = self.model(batch, training=False)[0].numpy()
         return self._l2_normalize(embedding)
 
     def embed_faces(self, faces_bgr: Iterable[np.ndarray]) -> List[np.ndarray]:

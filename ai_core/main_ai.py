@@ -6,7 +6,7 @@ from typing import List
 import cv2
 import numpy as np
 
-from .attendance import AttendanceLogger
+from .attendance import AttendanceLogger, RedisAttendanceState
 from .detection import FaceDetection, FaceDetector
 from .embedding import FaceEmbedder
 from .model_loader import load_facenet_model
@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AI module for real-time face recognition attendance.")
 
     parser.add_argument("--model-path", required=True, help="Path to FaceNet .h5 or SavedModel.")
-    parser.add_argument("--db-path", default="embeddings.pkl", help="Path to embeddings database (.pkl).")
+    parser.add_argument("--db-path", default="embeddings.db", help="Path to embeddings SQLite DB.")
     parser.add_argument(
         "--source",
         default="0",
@@ -36,6 +36,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=60,
         help="Duplicate attendance suppression window in seconds.",
+    )
+    parser.add_argument("--redis-url", default=None, help="Redis URL for shared attendance debouncing.")
+    parser.add_argument(
+        "--redis-key-prefix",
+        default="attendance:last",
+        help="Redis key prefix used for distributed attendance deduplication.",
     )
 
     parser.add_argument(
@@ -99,7 +105,6 @@ def enroll_from_image(
 
     vectors = [embedder.embed_face(d.face_bgr) for d in detections]
     store.add_identity(name, vectors)
-    store.save()
     print(f"Enrolled '{name}' with {len(vectors)} embedding(s).")
 
 
@@ -150,7 +155,6 @@ def enroll_from_webcam(
         raise RuntimeError("Enrollment cancelled or no face samples collected.")
 
     store.add_identity(name, collected)
-    store.save()
     print(f"Enrolled '{name}' with {len(collected)} embedding(s).")
 
 
@@ -229,7 +233,19 @@ def main() -> None:
     store.load()
 
     recognizer = FaceRecognizer(store=store, metric=args.metric, threshold=args.threshold)
-    attendance = AttendanceLogger(duplicate_window_seconds=args.duplicate_window)
+    attendance_state = None
+    if args.redis_url:
+        from redis import Redis
+
+        attendance_state = RedisAttendanceState(
+            redis_client=Redis.from_url(args.redis_url),
+            key_prefix=args.redis_key_prefix,
+        )
+
+    attendance = AttendanceLogger(
+        duplicate_window_seconds=args.duplicate_window,
+        state_store=attendance_state,
+    )
 
     source = open_source(args.source)
 

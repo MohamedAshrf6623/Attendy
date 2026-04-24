@@ -2,7 +2,7 @@
 
 A modular, production-oriented face recognition system split into:
 - `ai_core`: pure AI pipeline logic
-- `api_service`: Flask service exposing a JSON API contract for face extraction
+- `api_service`: FastAPI service exposing face extraction endpoints
 
 ## Scope
 
@@ -25,9 +25,10 @@ It intentionally excludes:
 - Face detection via OpenCV Haar Cascade or OpenCV DNN
 - Face alignment using eye landmarks (Haar eye detector)
 - FaceNet-compatible preprocessing (160x160, RGB, normalized to [-1, 1])
-- Embedding storage in local `.pkl` file
+- Embedding storage in SQLite (`embeddings.db` by default)
 - Configurable matching metric (`cosine` or `euclidean`) and threshold
 - Attendance deduplication within a configurable time window
+- Optional distributed attendance deduplication with Redis
 
 ## Project Structure
 
@@ -38,7 +39,7 @@ It intentionally excludes:
 - `ai_core/recognition.py`: Embedding store + face matching logic
 - `ai_core/attendance.py`: AI-side attendance tracker with duplicate suppression
 - `ai_core/main_ai.py`: End-to-end CLI pipeline (enrollment + recognition)
-- `api_service/app.py`: Flask API with `/api/v1/extract-faces`
+- `api_service/app.py`: FastAPI API with `/api/v1/extract-faces`
 
 ## Requirements
 
@@ -96,24 +97,52 @@ python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --source 0 --detect
 
 ## Embedding Database
 
-Embeddings are saved locally to `embeddings.pkl` by default.
+Embeddings are saved in SQLite (`embeddings.db`) by default.
 
 You can override the file path:
 
 ```bash
-python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --db-path data/my_embeddings.pkl --source 0
+python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --db-path data/my_embeddings.db --source 0
+```
+
+Use Redis for shared duplicate-suppression across multiple replicas:
+
+```bash
+python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --redis-url redis://localhost:6379/0
 ```
 
 ## API Service
 
-Run the Flask AI extraction API:
+Run the FastAPI AI extraction API:
 
 ```bash
-python -m api_service.app --model-path PATH_TO_FACENET_MODEL --host 0.0.0.0 --port 5000
+python -m api_service.app --model-path PATH_TO_FACENET_MODEL --host 0.0.0.0 --port 5000 --workers 2
 ```
+
+Production example:
+
+```bash
+MODEL_PATH=PATH_TO_FACENET_MODEL uvicorn api_service.app:app --host 0.0.0.0 --port 5000 --workers 2
+```
+
+Gunicorn + Uvicorn workers:
+
+```bash
+MODEL_PATH=PATH_TO_FACENET_MODEL gunicorn api_service.app:app -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:5000
+```
+
+Note: for GPU inference, prefer `-w 1` per GPU device to avoid overcommitting VRAM.
 
 Contract endpoint:
 - `POST /api/v1/extract-faces`
+
+Request formats:
+- Preferred: `multipart/form-data` with file field `image` (raw binary upload)
+- Backward compatible: JSON body with `image_base64`
+
+Burst protection:
+- API applies bounded in-process inference concurrency.
+- If overloaded, endpoint returns `429 SERVICE_BUSY`.
 
 ## Notes for Integration
 
