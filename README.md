@@ -39,7 +39,6 @@ It intentionally excludes:
 - `ai_core/attendance.py`: AI-side attendance tracker with duplicate suppression
 - `ai_core/main_ai.py`: End-to-end CLI pipeline (enrollment + recognition)
 - `api_service/app.py`: Flask API with `/api/v1/extract-faces`
-- `api_service/API_CONTRACT.md`: request/response contract documentation
 
 ## Requirements
 
@@ -115,8 +114,6 @@ python -m api_service.app --model-path PATH_TO_FACENET_MODEL --host 0.0.0.0 --po
 
 Contract endpoint:
 - `POST /api/v1/extract-faces`
-
-See full contract and examples in `api_service/API_CONTRACT.md`.
 
 ## Notes for Integration
 
