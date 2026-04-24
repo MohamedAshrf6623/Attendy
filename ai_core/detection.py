@@ -53,15 +53,19 @@ class FaceDetector:
         if self.method not in {"haar", "dnn"}:
             raise ValueError("method must be 'haar' or 'dnn'.")
 
-    def detect_faces(self, image_bgr: np.ndarray) -> List[FaceDetection]:
+    def detect_faces(
+        self, image_bgr: np.ndarray, require_alignment: bool = True
+    ) -> List[FaceDetection]:
         if image_bgr is None or image_bgr.size == 0:
             return []
 
         if self.method == "haar":
-            return self._detect_haar(image_bgr)
-        return self._detect_dnn(image_bgr)
+            return self._detect_haar(image_bgr, require_alignment=require_alignment)
+        return self._detect_dnn(image_bgr, require_alignment=require_alignment)
 
-    def _detect_haar(self, image_bgr: np.ndarray) -> List[FaceDetection]:
+    def _detect_haar(
+        self, image_bgr: np.ndarray, require_alignment: bool = True
+    ) -> List[FaceDetection]:
         gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(
             gray,
@@ -76,7 +80,7 @@ class FaceDetector:
                 x, y, x + w, y + h, image_bgr.shape[1], image_bgr.shape[0]
             )
             face_crop = image_bgr[y1:y2, x1:x2].copy()
-            aligned_face = self._align_face(face_crop)
+            aligned_face = self._align_face(face_crop) if require_alignment else face_crop
             detections.append(
                 FaceDetection(
                     bbox=(x1, y1, x2, y2),
@@ -86,7 +90,9 @@ class FaceDetector:
             )
         return detections
 
-    def _detect_dnn(self, image_bgr: np.ndarray) -> List[FaceDetection]:
+    def _detect_dnn(
+        self, image_bgr: np.ndarray, require_alignment: bool = True
+    ) -> List[FaceDetection]:
         h, w = image_bgr.shape[:2]
         blob = cv2.dnn.blobFromImage(
             cv2.resize(image_bgr, (300, 300)),
@@ -110,7 +116,7 @@ class FaceDetector:
                 continue
 
             face_crop = image_bgr[y1:y2, x1:x2].copy()
-            aligned_face = self._align_face(face_crop)
+            aligned_face = self._align_face(face_crop) if require_alignment else face_crop
             detections.append(
                 FaceDetection(
                     bbox=(x1, y1, x2, y2),

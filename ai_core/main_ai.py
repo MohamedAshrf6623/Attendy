@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import argparse
-import os
-from typing import List, Optional
+from typing import List
 
 import cv2
 import numpy as np
 
-from attendance import AttendanceLogger
-from detection import FaceDetection, FaceDetector
-from embedding import FaceEmbedder
-from model_loader import load_facenet_model
-from recognition import EmbeddingStore, FaceRecognizer
+from .attendance import AttendanceLogger
+from .detection import FaceDetection, FaceDetector
+from .embedding import FaceEmbedder
+from .model_loader import load_facenet_model
+from .recognition import EmbeddingStore, FaceRecognizer
 
 
 def parse_args() -> argparse.Namespace:

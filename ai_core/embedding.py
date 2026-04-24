@@ -5,7 +5,7 @@ from typing import Iterable, List
 import numpy as np
 import tensorflow as tf
 
-from preprocessing import preprocess_face
+from .preprocessing import preprocess_face
 
 
 class FaceEmbedder:
