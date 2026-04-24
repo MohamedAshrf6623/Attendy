@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -9,7 +8,7 @@ import numpy as np
 
 @dataclass
 class FaceDetection:
-    bbox: Tuple[int, int, int, int]
+    bbox: tuple[int, int, int, int]
     confidence: float
     face_bgr: np.ndarray
 
@@ -22,10 +21,10 @@ class FaceDetector:
         method: str = "haar",
         scale_factor: float = 1.1,
         min_neighbors: int = 5,
-        min_face_size: Tuple[int, int] = (40, 40),
+        min_face_size: tuple[int, int] = (40, 40),
         confidence_threshold: float = 0.6,
-        dnn_prototxt: Optional[str] = None,
-        dnn_weights: Optional[str] = None,
+        dnn_prototxt: str | None = None,
+        dnn_weights: str | None = None,
         crop_margin: float = 0.15,
     ) -> None:
         self.method = method.lower()
@@ -55,7 +54,7 @@ class FaceDetector:
 
     def detect_faces(
         self, image_bgr: np.ndarray, require_alignment: bool = True
-    ) -> List[FaceDetection]:
+    ) -> list[FaceDetection]:
         if image_bgr is None or image_bgr.size == 0:
             return []
 
@@ -65,7 +64,7 @@ class FaceDetector:
 
     def _detect_haar(
         self, image_bgr: np.ndarray, require_alignment: bool = True
-    ) -> List[FaceDetection]:
+    ) -> list[FaceDetection]:
         gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
         faces = self.face_cascade.detectMultiScale(
             gray,
@@ -74,7 +73,7 @@ class FaceDetector:
             minSize=self.min_face_size,
         )
 
-        detections: List[FaceDetection] = []
+        detections: list[FaceDetection] = []
         for (x, y, w, h) in faces:
             x1, y1, x2, y2 = self._expand_box(
                 x, y, x + w, y + h, image_bgr.shape[1], image_bgr.shape[0]
@@ -92,7 +91,7 @@ class FaceDetector:
 
     def _detect_dnn(
         self, image_bgr: np.ndarray, require_alignment: bool = True
-    ) -> List[FaceDetection]:
+    ) -> list[FaceDetection]:
         h, w = image_bgr.shape[:2]
         blob = cv2.dnn.blobFromImage(
             cv2.resize(image_bgr, (300, 300)),
@@ -103,7 +102,7 @@ class FaceDetector:
         self.dnn_net.setInput(blob)
         detections_raw = self.dnn_net.forward()
 
-        detections: List[FaceDetection] = []
+        detections: list[FaceDetection] = []
         for i in range(detections_raw.shape[2]):
             confidence = float(detections_raw[0, 0, i, 2])
             if confidence < self.confidence_threshold:
@@ -169,7 +168,7 @@ class FaceDetector:
 
     def _expand_box(
         self, x1: int, y1: int, x2: int, y2: int, width: int, height: int
-    ) -> Tuple[int, int, int, int]:
+    ) -> tuple[int, int, int, int]:
         box_w = x2 - x1
         box_h = y2 - y1
         margin_x = int(box_w * self.crop_margin)

@@ -4,7 +4,6 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
-from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -22,7 +21,7 @@ class EmbeddingStore:
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
-        self.embeddings: Dict[str, List[np.ndarray]] = {}
+        self.embeddings: dict[str, list[np.ndarray]] = {}
         self._lock = Lock()
         self._init_db()
 
@@ -54,7 +53,7 @@ class EmbeddingStore:
 
     def load(self) -> None:
         with self._lock:
-            loaded: Dict[str, List[np.ndarray]] = {}
+            loaded: dict[str, list[np.ndarray]] = {}
             with self._connect() as conn:
                 rows = conn.execute(
                     "SELECT identity, vector, dim FROM embeddings ORDER BY id"
@@ -80,7 +79,7 @@ class EmbeddingStore:
                         )
                 conn.commit()
 
-    def add_identity(self, name: str, vectors: List[np.ndarray]) -> None:
+    def add_identity(self, name: str, vectors: list[np.ndarray]) -> None:
         normalized_vectors = [np.asarray(v, dtype=np.float32) for v in vectors]
         if not normalized_vectors:
             return
@@ -99,7 +98,7 @@ class EmbeddingStore:
                 self.embeddings[name] = []
             self.embeddings[name].extend(normalized_vectors)
 
-    def identities(self) -> List[str]:
+    def identities(self) -> list[str]:
         with self._lock:
             return list(self.embeddings.keys())
 
@@ -154,7 +153,7 @@ class FaceRecognizer:
             is_match=is_match,
         )
 
-    def _compare(self, a: np.ndarray, b: np.ndarray) -> Tuple[float, float]:
+    def _compare(self, a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
         a = np.asarray(a, dtype=np.float32)
         b = np.asarray(b, dtype=np.float32)
 

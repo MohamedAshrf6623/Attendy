@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from typing import List
 
 import cv2
 import numpy as np
@@ -14,7 +13,9 @@ from .recognition import EmbeddingStore, FaceRecognizer
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="AI module for real-time face recognition attendance.")
+    parser = argparse.ArgumentParser(
+        description="AI module for real-time face recognition attendance."
+    )
 
     parser.add_argument("--model-path", required=True, help="Path to FaceNet .h5 or SavedModel.")
     parser.add_argument("--db-path", default="embeddings.db", help="Path to embeddings SQLite DB.")
@@ -37,7 +38,11 @@ def parse_args() -> argparse.Namespace:
         default=60,
         help="Duplicate attendance suppression window in seconds.",
     )
-    parser.add_argument("--redis-url", default=None, help="Redis URL for shared attendance debouncing.")
+    parser.add_argument(
+        "--redis-url",
+        default=None,
+        help="Redis URL for shared attendance debouncing.",
+    )
     parser.add_argument(
         "--redis-key-prefix",
         default="attendance:last",
@@ -116,7 +121,7 @@ def enroll_from_webcam(
     store: EmbeddingStore,
     samples: int,
 ) -> None:
-    collected: List[np.ndarray] = []
+    collected: list[np.ndarray] = []
 
     while len(collected) < samples:
         ok, frame = cap.read()

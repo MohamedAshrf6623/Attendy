@@ -6,7 +6,7 @@ import logging
 import os
 import time
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Annotated, Any
 
 import anyio
 import cv2
@@ -19,7 +19,6 @@ from starlette.concurrency import run_in_threadpool
 from ai_core.detection import FaceDetector
 from ai_core.embedding import FaceEmbedder
 from ai_core.model_loader import load_facenet_model
-
 
 LOGGER = logging.getLogger("api_service")
 
@@ -144,16 +143,19 @@ def create_app(
     app = FastAPI(title="AI Face Extractor Service", lifespan=lifespan)
 
     @app.get("/health")
-    async def health() -> Dict[str, str]:
+    async def health() -> dict[str, str]:
         return {"status": "ok", "service": "ai-face-extractor"}
 
     @app.post("/api/v1/extract-faces")
     async def extract_faces(
         request: Request,
-        image: UploadFile | None = File(default=None),
-        camera_id_form: str | None = Form(default=None, alias="camera_id"),
-        timestamp_form: str | None = Form(default=None, alias="timestamp"),
-        require_alignment_form: bool | None = Form(default=None, alias="require_alignment"),
+        image: Annotated[UploadFile | None, File()] = None,
+        camera_id_form: Annotated[str | None, Form(alias="camera_id")] = None,
+        timestamp_form: Annotated[str | None, Form(alias="timestamp")] = None,
+        require_alignment_form: Annotated[
+            bool | None,
+            Form(alias="require_alignment"),
+        ] = None,
     ) -> JSONResponse:
         started = time.perf_counter()
 
@@ -183,7 +185,7 @@ def create_app(
                     True if require_alignment_form is None else bool(require_alignment_form)
                 )
             else:
-                payload: Dict[str, Any] | None = await request.json()
+                payload: dict[str, Any] | None = await request.json()
                 if payload is None:
                     return _error_response(
                         started,

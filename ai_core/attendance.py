@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 from threading import Lock
-from typing import Dict, List, Optional, Protocol
+from typing import Protocol
 
 try:
     from redis import Redis
@@ -24,7 +24,7 @@ class AttendanceStateStore(Protocol):
 
 class InMemoryAttendanceState:
     def __init__(self) -> None:
-        self._last_marked: Dict[str, datetime] = {}
+        self._last_marked: dict[str, datetime] = {}
         self._lock = Lock()
 
     def should_mark(self, name: str, ttl_seconds: int, now: datetime) -> bool:
@@ -46,7 +46,12 @@ class RedisAttendanceState:
     def should_mark(self, name: str, ttl_seconds: int, now: datetime) -> bool:
         key = f"{self.key_prefix}:{name}"
         # SET NX EX atomically enforces distributed de-duplication across instances.
-        was_set = self.redis.set(name=key, value=now.isoformat(timespec="seconds"), ex=ttl_seconds, nx=True)
+        was_set = self.redis.set(
+            name=key,
+            value=now.isoformat(timespec="seconds"),
+            ex=ttl_seconds,
+            nx=True,
+        )
         return bool(was_set)
 
 
@@ -60,10 +65,10 @@ class AttendanceLogger:
     ) -> None:
         self.duplicate_window_seconds = duplicate_window_seconds
         self.state_store = state_store or InMemoryAttendanceState()
-        self.records: List[AttendanceRecord] = []
+        self.records: list[AttendanceRecord] = []
         self._records_lock = Lock()
 
-    def mark_present(self, name: str, timestamp: Optional[datetime] = None) -> bool:
+    def mark_present(self, name: str, timestamp: datetime | None = None) -> bool:
         if name == "Unknown":
             return False
 
@@ -77,7 +82,7 @@ class AttendanceLogger:
             )
         return True
 
-    def get_records(self) -> List[Dict[str, str]]:
+    def get_records(self) -> list[dict[str, str]]:
         with self._records_lock:
             return [asdict(record) for record in self.records]
 

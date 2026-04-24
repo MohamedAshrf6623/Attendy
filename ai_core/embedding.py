@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List
+from collections.abc import Iterable
 
 import numpy as np
 import tensorflow as tf
@@ -27,7 +27,7 @@ class FaceEmbedder:
         embedding = self.model(batch, training=False)[0].numpy()
         return self._l2_normalize(embedding)
 
-    def embed_faces(self, faces_bgr: Iterable[np.ndarray]) -> List[np.ndarray]:
+    def embed_faces(self, faces_bgr: Iterable[np.ndarray]) -> list[np.ndarray]:
         embeddings = []
         for face in faces_bgr:
             embeddings.append(self.embed_face(face))

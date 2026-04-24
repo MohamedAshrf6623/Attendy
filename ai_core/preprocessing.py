@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Tuple
-
 import cv2
 import numpy as np
 
@@ -20,7 +18,7 @@ def normalize_lighting(image_rgb: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(merged, cv2.COLOR_YCrCb2RGB)
 
 
-def resize_face(image_rgb: np.ndarray, target_size: Tuple[int, int] = (160, 160)) -> np.ndarray:
+def resize_face(image_rgb: np.ndarray, target_size: tuple[int, int] = (160, 160)) -> np.ndarray:
     return cv2.resize(image_rgb, target_size, interpolation=cv2.INTER_AREA)
 
 
@@ -32,7 +30,7 @@ def scale_pixels(image_rgb: np.ndarray) -> np.ndarray:
 
 def preprocess_face(
     face_bgr: np.ndarray,
-    target_size: Tuple[int, int] = (160, 160),
+    target_size: tuple[int, int] = (160, 160),
     apply_lighting_norm: bool = True,
 ) -> np.ndarray:
     if face_bgr is None or face_bgr.size == 0:
