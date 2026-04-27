@@ -1,0 +1,13 @@
+# files
+*.md
+dockerfile
+.dockerignore
+.gitignore
+
+# directories
+.github/
+.venv/
+venv/
+tests/
+scripts/
+models/
