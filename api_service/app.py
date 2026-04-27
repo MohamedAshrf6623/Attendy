@@ -114,7 +114,6 @@ def _process_frame(
 
 
 def create_app(
-    model_path: str,
     detector_method: str = "haar",
     dnn_prototxt: str | None = None,
     dnn_weights: str | None = None,
@@ -124,18 +123,13 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         # Model and detector are loaded once per process on startup.
-        if not model_path:
-            raise RuntimeError(
-                "MODEL_PATH is not configured. Set MODEL_PATH env var or run with --model-path."
-            )
-
         app.state.detector = FaceDetector(
             method=detector_method,
             dnn_prototxt=dnn_prototxt,
             dnn_weights=dnn_weights,
             confidence_threshold=dnn_confidence,
         )
-        model = load_facenet_model(model_path)
+        model = load_facenet_model()
         app.state.embedder = FaceEmbedder(model)
         app.state.inference_semaphore = anyio.Semaphore(max_inference_concurrency)
         yield
@@ -274,7 +268,6 @@ def create_app(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="AI face extraction FastAPI service.")
-    parser.add_argument("--model-path", required=True, help="Path to FaceNet .h5 or SavedModel")
     parser.add_argument("--host", default="0.0.0.0")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--detector", default="haar", choices=["haar", "dnn"])
@@ -288,7 +281,6 @@ def _parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = _parse_args()
-    os.environ["MODEL_PATH"] = args.model_path
     os.environ["DETECTOR_METHOD"] = args.detector
     os.environ["DNN_PROTOTXT"] = args.dnn_prototxt or ""
     os.environ["DNN_WEIGHTS"] = args.dnn_weights or ""
@@ -305,7 +297,6 @@ def main() -> None:
 
 
 app = create_app(
-    model_path=os.getenv("MODEL_PATH", ""),
     detector_method=os.getenv("DETECTOR_METHOD", "haar"),
     dnn_prototxt=os.getenv("DNN_PROTOTXT") or None,
     dnn_weights=os.getenv("DNN_WEIGHTS") or None,

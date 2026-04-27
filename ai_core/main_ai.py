@@ -17,7 +17,6 @@ def parse_args() -> argparse.Namespace:
         description="AI module for real-time face recognition attendance."
     )
 
-    parser.add_argument("--model-path", required=True, help="Path to FaceNet .h5 or SavedModel.")
     parser.add_argument("--db-path", default="embeddings.db", help="Path to embeddings SQLite DB.")
     parser.add_argument(
         "--source",
@@ -231,7 +230,7 @@ def main() -> None:
     args = parse_args()
 
     detector = build_detector(args)
-    model = load_facenet_model(args.model_path)
+    model = load_facenet_model()
     embedder = FaceEmbedder(model)
 
     store = EmbeddingStore(args.db_path)

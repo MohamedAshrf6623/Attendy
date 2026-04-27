@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-import os
 import tensorflow as tf
 
-def load_facenet_model(model_path: str, compile_model: bool = False) -> tf.keras.Model:
+
+def load_facenet_model(
+    model_path: str | None = None,
+    compile_model: bool = False,
+) -> tf.keras.Model:
     """Load FaceNet dynamically to bypass Python bytecode incompatibility."""
     from keras_facenet import FaceNet
     
