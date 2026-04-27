@@ -1,0 +1,18 @@
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: linting and unit tests
+    uses: ./.github/workflows/test-and-lint.yml
+    permissions:
+      contents: read
+
+  security:
+    uses: ./.github/workflows/codeql-security-analysis.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      security-events: write
+      packages: read

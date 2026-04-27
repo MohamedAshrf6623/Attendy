@@ -16,7 +16,8 @@ libglib2.0-0 \
 && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir .
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install -r requirements.txt
 
 RUN groupadd -r nonroot && useradd -m -r -g nonroot nonroot
 
