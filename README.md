@@ -81,6 +81,7 @@ python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --source path/to/te
 
 Press `q` to quit webcam mode.
 
+
 ## Detector Options
 
 Use Haar cascade (default):
@@ -113,25 +114,22 @@ python -m ai_core.main_ai --model-path PATH_TO_FACENET_MODEL --redis-url redis:/
 
 ## API Service
 
-Run the FastAPI AI extraction API:
+### 1) Run using docker
 
 ```bash
+# Note: if the container did not run with you, there may be another service using the same port
+# try replacing the first 5000 with another port, for example docker run -p 5001:5000 mohamedfouad71/ai_facenet_service:1.0.0
+
+docker run -p 5000:5000 mohamedfouad71/ai_facenet_service:1.0.0 # use this if you want to run the a specific release ( a git tag )
+docker run -p 5000:5000 mohamedfouad71/ai_facenet_service       # use this if you want to run the latest commit published on main branch
+```
+
+### 2) Run Manually
+
+```bash
+pip install -r requirements.txt
 python -m api_service.app --model-path PATH_TO_FACENET_MODEL --host 0.0.0.0 --port 5000 --workers 2
 ```
-
-Production example:
-
-```bash
-MODEL_PATH=PATH_TO_FACENET_MODEL uvicorn api_service.app:app --host 0.0.0.0 --port 5000 --workers 2
-```
-
-Gunicorn + Uvicorn workers:
-
-```bash
-MODEL_PATH=PATH_TO_FACENET_MODEL gunicorn api_service.app:app -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:5000
-```
-
-Note: for GPU inference, prefer `-w 1` per GPU device to avoid overcommitting VRAM.
 
 Contract endpoint:
 - `POST /api/v1/extract-faces`
