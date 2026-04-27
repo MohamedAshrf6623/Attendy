@@ -10,9 +10,10 @@ jobs:
       contents: read
 
   security:
-    uses: ./.github/workflows/codeql-security-analysis.yml
+    uses: ./.github/workflows/codeql.yml
     secrets: inherit
     permissions:
+      actions: read
       contents: read
       security-events: write
       packages: read
