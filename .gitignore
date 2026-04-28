@@ -29,6 +29,7 @@ Thumbs.db
 *.pb
 
 # Data / media
+*.db
 data/
 outputs/
 
