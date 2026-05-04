@@ -27,6 +27,8 @@ Thumbs.db
 *.h5
 *.keras
 *.pb
+Code_Consolidation.py
+*.docx
 
 # Data / media
 *.db
