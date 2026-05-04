@@ -55,7 +55,7 @@ def _extract_faces(
 def create_app() -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        app.state.detector = FaceDetector(method="haar")
+        app.state.detector = FaceDetector()
         app.state.embedder = FaceEmbedder(load_facenet_model())
         yield
 
