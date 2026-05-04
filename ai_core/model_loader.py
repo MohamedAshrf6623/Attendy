@@ -4,14 +4,11 @@ import tensorflow as tf
 
 
 def load_facenet_model() -> tf.keras.Model:
-    """Load FaceNet dynamically to bypass Python bytecode incompatibility."""
     from keras_facenet import FaceNet
-    
-    print("Building FaceNet architecture dynamically via keras-facenet...")
-    # This automatically builds a safe model and caches the weights!
+
     facenet = FaceNet()
     model = facenet.model
-    
+
     _validate_model_input(model)
     return model
 
