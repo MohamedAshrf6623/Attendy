@@ -24,10 +24,10 @@ class _DummyEmbedder:
 
 def _build_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(app_module, "FaceDetector", _DummyDetector)
-    monkeypatch.setattr(app_module, "load_facenet_model", lambda _: object())
+    monkeypatch.setattr(app_module, "load_facenet_model", lambda: object())
     monkeypatch.setattr(app_module, "FaceEmbedder", _DummyEmbedder)
 
-    app = app_module.create_app(model_path="dummy-model-path")
+    app = app_module.create_app()
     return TestClient(app)
 
 
