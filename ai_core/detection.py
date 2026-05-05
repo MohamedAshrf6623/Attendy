@@ -100,8 +100,12 @@ class FaceDetector:
             return face_bgr
 
         angle = np.degrees(np.arctan2(dy, dx))
-        center = (float((left_eye[0] + right_eye[0]) // 2), float((left_eye[1] + right_eye[1]) // 2))
-        rot_mat = cv2.getRotationMatrix2D(center, float(angle), 1.0)
+        # Explicitly cast to native Python float or int
+        center_x = float((left_eye[0] + right_eye[0]) / 2)
+        center_y = float((left_eye[1] + right_eye[1]) / 2)
+        center = (center_x, center_y)
+
+        rot_mat = cv2.getRotationMatrix2D(center, angle, 1.0)
         aligned = cv2.warpAffine(
             face_bgr,
             rot_mat,

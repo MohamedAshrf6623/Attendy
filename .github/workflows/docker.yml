@@ -22,25 +22,24 @@ jobs:
 
       - name: Docker Build
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:latest .
-
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:latest .
       - name: Docker Tag
         run: |
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:latest \
-          ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:${{ github.sha }}
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:latest \
+          ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:${{ github.sha }}
 
           # Tag the image with the semantic tag if it exists
           if [ "${{ github.ref_type }}" = "tag" ]; then
-              docker tag ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:latest \
-              ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:${{ github.ref_name }}
+              docker tag ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:latest \
+              ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:${{ github.ref_name }}
           fi
 
       - name: Docker Push
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:${{ github.sha }}
 
           # Push the tag if it exists (semantic release) 
           if [ "${{ github.ref_type }}" = "tag" ]; then
-              docker push ${{ secrets.DOCKERHUB_USERNAME }}/smart-mirror-api:${{ github.ref_name }}
+              docker push ${{ secrets.DOCKERHUB_USERNAME }}/ai_facenet_service:${{ github.ref_name }}
           fi
