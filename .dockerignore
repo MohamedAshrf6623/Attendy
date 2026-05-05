@@ -3,6 +3,7 @@
 dockerfile
 .dockerignore
 .gitignore
+*.db
 
 # directories
 .github/
